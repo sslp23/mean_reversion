@@ -96,6 +96,7 @@ def train_model(data, tickers, trainset=0.7, gap=2, exit=1):
     plt.plot(spread.iloc[trainset], label = 'Train', color='r')
     plt.plot(spread.iloc[testset], label = 'Test', color='b')
     plt.legend()
+    plt.grid()
     plt.title(f'Spread - {tickers[0]} and {tickers[1]}')
     plt.show()
     plt.close()
@@ -122,11 +123,76 @@ def train_model(data, tickers, trainset=0.7, gap=2, exit=1):
     print(f"Max Drawdown (Train): {drawdown}\nMax Drawdown Duration (Train): {drawdown_duration}")
     
     plt.plot(np.cumsum(pnl[1:]))
+    plt.grid()
     plt.title(f'Cumulative Returns - mean reversion {tickers[0]} and {tickers[1]}')
     plt.show()
     plt.close()
 
-#def backtest(data, tickers)
+def build_model(data, tickers, gap=2, exit=1):
+    '''
+    building the model for the complete dataset
+    making the backtest and extracting performance info
+    '''
+    # data
+    df1 = data[tickers[0]]
+    df2 = data[tickers[1]]
+
+    # unify data
+    df = pd.merge(df1, df2, on="Date", suffixes=(f"_{tickers[0]}", f"_{tickers[1]}"))
+    df.set_index("Date", inplace=True)
+    df.sort_index(inplace=True)
+
+    # get the adjusted close value for each asset
+    t1_vals = df.loc[:, f"Adj Close_{tickers[0]}"]
+    t2_vals = df.loc[:, f"Adj Close_{tickers[1]}"]
+
+    # make the linear regression to find the slope (hedge ratio)
+    # lin reg -> (y, x)
+    # t1_vals = b*t2_vals + c 
+    
+    model = sm.OLS(t1_vals, t2_vals)
+    results = model.fit()
+    hedgeRatio = results.params[0]
+
+    t1_vals = df.loc[:, f"Adj Close_{tickers[0]}"]
+    t2_vals = df.loc[:, f"Adj Close_{tickers[1]}"]
+
+    spread = t1_vals - hedgeRatio*t2_vals
+    
+    # mean spread (used to calculate z - score) 
+    # need to use only trainset values (parameter)
+    spreadMean = np.mean(spread)
+    spreadStd = np.std(spread)
+    positions, pnl = make_positions(spread, spreadMean, spreadStd, df, tickers, gap=gap, exit=exit)
+    
+    plt.plot(spread)
+    plt.plot(spread, color='b')
+    plt.axhline(gap * spreadStd + spreadMean, color="red", linestyle="--", label="Upper Threshold")
+    plt.axhline(-gap * spreadStd + spreadMean, color="green", linestyle="--", label="Lower Threshold")
+    plt.axhline(spreadMean, color="black", linestyle="--", label="Mean")
+
+    #sell the spread:
+    sell = positions[positions[positions.columns[0]] == -1]
+    buy = positions[positions[positions.columns[0]] == 1]
+
+    plt.scatter(spread.iloc[sell.index].index, spread.iloc[sell.index].values, color='r')
+    plt.scatter(spread.iloc[buy.index].index, spread.iloc[buy.index].values, color='g')
+    plt.grid()
+    plt.title(f'Spread - {tickers[0]} and {tickers[1]}')
+    plt.show()
+    plt.close()
+
+    sharpe = long_only_sharpe_ratio(pnl[1:])
+    print("Sharpe: ", sharpe)
+
+    drawdown, drawdown_duration, i = calculate_max_DD(pnl[1:])
+    print(f"Max Drawdown (Train): {drawdown}\nMax Drawdown Duration (Train): {drawdown_duration}")
+    
+    plt.plot(np.cumsum(pnl[1:]))
+    plt.grid()
+    plt.title(f'Cumulative Returns - mean reversion {tickers[0]} and {tickers[1]}')
+    plt.show()
+    plt.close()
 
 def main():
     tickers = ['EWA', 'EWU']
@@ -136,8 +202,12 @@ def main():
     
     data = get_data(tickers, st=start, end=end)
 
-    train_model(data, tickers, gap=1.75, exit=1)
+    train_model(data, tickers, gap=1.5, exit=1)
 
+    build_model(data, tickers, gap=1.5, exit=1)
+
+    #.value_counts()
+    
 
     
     

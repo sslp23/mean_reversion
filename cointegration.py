@@ -102,7 +102,9 @@ def simple_cointegration(tickers: list, st: str, end: str):
     if t_value < c_value:
         print(f'{tickers[0]} and {tickers[1]} are cointegrated')
         print(f'p_value: {p_value}\nt_value: {t_value}\nc_value: {c_value}')
+
         
+
 def generate_signals(spread: list, data: list, ticker1: str, ticker2: str):
     t1_vals = data[ticker1]['Adj Close'].values
     t2_vals = data[ticker2]['Adj Close'].values
