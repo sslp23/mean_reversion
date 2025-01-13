@@ -85,7 +85,7 @@ def find_mult_cointegration(tickers: list, st: str, end: str):
                 p_value = adf[1]
                 if t_value < c_value:
                     print(f'{t1} and {t2} are cointegrated')
-                    print(f'p_value: {p_value}\n t_value: {t_value}\n c_value: {c_value}')
+                    print(f'p_value: {p_value}\nTest Value: {t_value}\nCritical Value (5%): {c_value}')
                     cointegrated_pairs.append((t1,t2))
     
     return cointegrated_pairs
@@ -101,7 +101,7 @@ def simple_cointegration(tickers: list, st: str, end: str):
     p_value = adf[1]
     if t_value < c_value:
         print(f'{tickers[0]} and {tickers[1]} are cointegrated')
-        print(f'p_value: {p_value}\nt_value: {t_value}\nc_value: {c_value}')
+        print(f'p_value: {p_value}\nTest Value: {t_value}\Critical Value (5%): {c_value}')
 
         
 
