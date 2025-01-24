@@ -103,89 +103,18 @@ def simple_cointegration(tickers: list, st: str, end: str):
         print(f'{tickers[0]} and {tickers[1]} are cointegrated')
         print(f'p_value: {p_value}\nTest Value: {t_value}\Critical Value (5%): {c_value}')
 
-        
-
-def generate_signals(spread: list, data: list, ticker1: str, ticker2: str):
-    t1_vals = data[ticker1]['Adj Close'].values
-    t2_vals = data[ticker2]['Adj Close'].values
-    mean_residuals = np.mean(spread)
-    std_residuals = np.std(spread)
-    z_score = (spread - mean_residuals) / std_residuals
-
-    upper_threshold = 2
-    lower_threshold = -2
-    exit_threshold = 0.5
-    
-    # Create signals
-    signals = pd.DataFrame({'spread': spread, 'z_score': z_score})#signals = pd.DataFrame({'t1_vals': t1_vals, 't2_vals': t2_vals, 'z_score': z_score})
-    signals['long'] = z_score < lower_threshold  # Buy the spread
-    signals['short'] = z_score > upper_threshold  # Short the spread
-    signals['exit'] = abs(z_score) < exit_threshold  # Exit positions
-    
-    # Plot residuals with signals
-    plt.figure(figsize=(12, 6))
-    plt.plot(spread, label="Residuals", color="blue", alpha=0.7)
-    plt.axhline(upper_threshold * std_residuals + mean_residuals, color="red", linestyle="--", label="Upper Threshold")
-    plt.axhline(lower_threshold * std_residuals + mean_residuals, color="green", linestyle="--", label="Lower Threshold")
-    plt.axhline(mean_residuals, color="black", linestyle="--", label="Mean")
-    
-    # Plot signals
-    plt.scatter(signals.index[signals['long']], signals['spread'][signals['long']], color='green', label='Buy Signal', alpha=0.7)
-    plt.scatter(signals.index[signals['short']], signals['spread'][signals['short']], color='red', label='Sell Signal', alpha=0.7)
-    
-    # Customize plot
-    plt.xlabel("Time")
-    plt.ylabel("Residuals")
-    plt.title("Residuals and Trading Signals")
-    plt.legend()
-    plt.tight_layout()
-    plt.show()
-
-    return signals
-
-def calculate_strategy_returns(signals: list, data: list, ticker1: str, ticker2: str):
-    """
-    Calculates the cumulative return of the mean reversion strategy.
-    """
-    t1_vals = data[ticker1]['Adj Close'].values
-    t2_vals = data[ticker2]['Adj Close'].values
-    # Assume trading $1 per signal
-    position = np.zeros(len(signals))
-    position[signals['long']] = 1  # Long the spread
-    position[signals['short']] = -1  # Short the spread
-
-    # Calculate daily changes in the spread
-    residual_changes = np.diff(signals['spread'], prepend=signals['spread'][0])
-
-    # Calculate daily returns
-    daily_returns = position * residual_changes
-
-    # Cumulative returns
-    cumulative_returns = np.cumsum(daily_returns)
-
-    # Plot cumulative returns
-    plt.figure(figsize=(10, 5))
-    plt.plot(cumulative_returns, label="Cumulative Returns", color="purple")
-    plt.xlabel("Time")
-    plt.ylabel("Cumulative Returns")
-    plt.title("Strategy Cumulative Returns")
-    plt.legend()
-    plt.tight_layout()
-    plt.show()
-
-    return cumulative_returns
-
 def main():
-    tickers = ['EWA', 'EWK', 'EWO', 'EWC', 'EWQ', 'EWG', 'EWH', 'EWI', 'EWJ', 'EWM', 
+    tickers = ['EWH', 'EWA', 'EWK', 'EWO', 'EWC', 'EWQ', 'EWG', 'EWI', 'EWM', 
     'EWW', 'EWN', 'EWS', 'EWP', 'EWD', 'EWL', 'EWJ', 'EWY', 'EZU', 'EWU', 
     'EWZ', 'EWT', 'SPY']
+
     end = datetime.today() #- timedelta(days=3*365)
     start = end - timedelta(days=5*365)
 
     cointegrated = find_mult_cointegration(tickers, start, end)
     pd.DataFrame(cointegrated, columns=['Pair1', 'Pair2']).to_csv('cointegrated_pairs.csv', index=False)
 
-    tickers = ['EWA', 'EWU']
+    tickers = ['EWI', 'EWA']
     
     simple_cointegration(tickers, start, end)
     

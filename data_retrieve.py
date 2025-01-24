@@ -1,5 +1,6 @@
 import yfinance as yf
 import pandas as pd
+import time
 
 # Define a function to fetch historical data for multiple financial symbols
 # Parameters:
@@ -17,8 +18,15 @@ def get_data(symbols: list, st='2021-09-01', end='2024-11-21', how='verbose') ->
             print(symbol)  # Print the current symbol being processed
         # Fetch historical data for the current symbol using yfinance (yf) library
         # and store it in the dictionary with the symbol as the key
-        
-        base_df = yf.download(symbol, start=st, end=end, auto_adjust=False,  progress=False) 
+        passed = 0
+        while passed == 0:
+            try:
+                base_df = yf.download(symbol, start=st, end=end, auto_adjust=False,  progress=False) 
+                passed = 1
+            except:
+                print(f'retrying ticker f{symbols}')
+                passed = 0
+                time.sleep(5)
         base_df = base_df.reset_index()
         #base_df['Date'] = pd.to_datetime(base_df['Date'])
         base_df.columns = base_df.columns.get_level_values(0)        
